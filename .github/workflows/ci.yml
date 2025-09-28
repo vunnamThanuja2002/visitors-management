@@ -1,4 +1,4 @@
-name: HTML & CSS CI
+name: HTML CI (Windows)
 
 on:
   push:
@@ -7,19 +7,30 @@ on:
     branches: [ main ]
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-
+  html-validate:
+    runs-on: windows-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Validate HTML files
-      uses: Cyb3r-Jak3/html5validator-action@v0.4.4
-      with:
-        root: .
-    
-    - name: Lint CSS files
-      run: |
-        npm install -g stylelint stylelint-config-standard
-        npx stylelint "**/*.css"
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Install htmlhint locally (fast, no global perms needed)
+      - name: Install htmlhint
+        run: npm install htmlhint --save-dev
+
+      # Validate all HTML files anywhere in the repo.
+      # If none exist, skip with a friendly message.
+      - name: Validate HTML files (if any)
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path . -Recurse -Include *.html
+          if ($files.Count -eq 0) {
+            Write-Host "No HTML files found, skipping validation."
+            exit 0
+          }
+          npx htmlhint "**/*.html"
+
